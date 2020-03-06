@@ -8,6 +8,7 @@ class Transaction {
     }
 
     //TODO: Add toString function
+    toString() {}
 }
 
 let trx = new Transaction(1, 2, 3);
