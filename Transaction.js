@@ -1,16 +1,37 @@
-class Transaction {
-    constructor(to, from, amount) {
-        this.to = to;
-        this.from = from;
-        this.amount = amount;
-        this.hash = "Random_String";
-        this.signature = "Random_String";
-    }
+const sha256 = require("./chain-utils");
 
-    //TODO: Add toString function
-    toString() {}
+class Transaction {
+	constructor(to, from, amount) {
+		this.to = to;
+		this.from = from;
+		this.amount = amount;
+		this.hash = sha256(Math.random());
+		this.id = Transaction.getCount();
+	}
+
+	static getCount() {
+		Transaction.incrementCount();
+		return Transaction.count;
+	}
+
+	static incrementCount() {
+		Transaction.count++;
+	}
+
+	toString() {
+		return `
+        to:${this.to}
+        from:${this.from}
+        amount:${this.amount}
+        hash:${this.hash}
+        id:${this.id}`;
+	}
 }
 
-let trx = new Transaction(1, 2, 3);
+Transaction.count = 0;
 
-console.log(trx);
+// for (let i = 0; i < 5; i++) {
+// 	console.log(new Transaction(1, 2, 3));
+// }
+
+module.exports = Transaction;

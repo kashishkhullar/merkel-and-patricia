@@ -1,4 +1,4 @@
-const crypto = require("crypto");
+const sha256 = require("./chain-utils");
 const util = require("util");
 
 class MerkelTree {
@@ -6,17 +6,10 @@ class MerkelTree {
 		this.root = [];
 	}
 
-	createTree(data) {
-		this.root.push(data);
-		this.root.push(
-			data.map(t =>
-				crypto
-					.createHash("sha256")
-					.update(t.toString())
-					.digest("hex")
-			)
-		);
-		console.log(this.root.slice(-1));
+	createTree(transactionList) {
+		this.root.push(transactionList);
+		this.root.push(transactionList.map(t => t.hash));
+		// console.log(this.root.slice(-1));
 
 		while (this.root.slice(-1)[0].length > 1) {
 			let temp = [];
@@ -28,13 +21,10 @@ class MerkelTree {
 			) {
 				if (index < this.root.slice(-1)[0].length - 1 && index % 2 == 0)
 					temp.push(
-						crypto
-							.createHash("sha256")
-							.update(
-								this.root.slice(-1)[0][index] +
-									this.root.slice(-1)[0][index + 1]
-							)
-							.digest("hex")
+						sha256(
+							this.root.slice(-1)[0][index] +
+								this.root.slice(-1)[0][index + 1]
+						)
 					);
 				else temp.push(this.root.slice(-1)[0][index]);
 			}
@@ -50,19 +40,16 @@ class MerkelTree {
 		this.createTree([...this.root[0], ...data]);
 	}
 
-	verify(data) {
-		let position = this.root[0].find(d => d == data);
-		console.log(position);
+	verify(transaction) {
+		let position = this.root[0].find(t => t.hash == transaction.hash);
+		// console.log(position);
 		if (position) {
 			let indexToVerify = position - 1;
 
-			let hash = crypto
-				.createHash("sha256")
-				.update(data.toString())
-				.digest("hex");
+			let hash = sha256(transaction.toString());
 
 			let tempRoot = [...this.root];
-			tempRoot[0][indexToVerify] = data;
+			tempRoot[0][indexToVerify] = transaction;
 			tempRoot[1][indexToVerify] = hash;
 
 			while (tempRoot.slice(-1)[0].length > 1) {
@@ -78,21 +65,18 @@ class MerkelTree {
 						index % 2 == 0
 					)
 						temp.push(
-							crypto
-								.createHash("sha256")
-								.update(
-									tempRoot.slice(-1)[0][index] +
-										tempRoot.slice(-1)[0][index + 1]
-								)
-								.digest("hex")
+							sha256(
+								tempRoot.slice(-1)[0][index] +
+									tempRoot.slice(-1)[0][index + 1]
+							)
 						);
 					else temp.push(tempRoot.slice(-1)[0][index]);
 				}
 				tempRoot.push(temp);
 			}
-			console.log(
-				util.inspect(tempRoot, false, null, true /* enable colors */)
-			);
+			// console.log(
+			// 	util.inspect(tempRoot, false, null, true /* enable colors */)
+			// );
 
 			if (this.root.slice(-1)[0] !== tempRoot.slice(-1)[0])
 				console.log("Invalid");
@@ -101,17 +85,4 @@ class MerkelTree {
 	}
 }
 
-const tree = new MerkelTree();
-tree.createTree([1, 2, 3, 4, 5]);
-console.log(util.inspect(tree, false, null, true /* enable colors */));
-
-console.log(
-	crypto
-		.createHash("sha256")
-		.update("kashish")
-		.digest("hex")
-);
-
-tree.add([6, 7, 8, 9]);
-console.log(util.inspect(tree, false, null, true /* enable colors */));
-tree.verify(3);
+module.exports = MerkelTree;

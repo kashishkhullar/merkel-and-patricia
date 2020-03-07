@@ -1,9 +1,11 @@
 class TransactionList {
-    constructor() {
-        this.list = [];
-    }
+	constructor() {
+		this.list = [];
+	}
 
-    add(transaction) {
-        this.list.push(transaction);
-    }
+	add(transaction) {
+		this.list.push(transaction);
+	}
 }
+
+module.exports = TransactionList;
