@@ -1,87 +1,59 @@
-const sha256 = require("./chain-utils");
-const util = require("util");
+const sha256 = require("./helper");
 
 class MerkelTree {
+
+	// root stores all the layers
 	constructor() {
 		this.root = [];
 	}
 
+	// Creates all the layers of thr tree for the given transaction list
 	createTree(transactionList) {
-		this.root.push(transactionList);
-		this.root.push(transactionList.map(t => t.hash));
-		// console.log(this.root.slice(-1));
+		this.root.unshift(transactionList);
+		this.root.unshift(transactionList.map(t => t.hash));
 
-		while (this.root.slice(-1)[0].length > 1) {
+		while (this.root[0].length > 1) {
 			let temp = [];
 
-			for (
-				let index = 0;
-				index < this.root.slice(-1)[0].length;
-				index += 2
-			) {
-				if (index < this.root.slice(-1)[0].length - 1 && index % 2 == 0)
-					temp.push(
-						sha256(
-							this.root.slice(-1)[0][index] +
-								this.root.slice(-1)[0][index + 1]
-						)
-					);
-				else temp.push(this.root.slice(-1)[0][index]);
+			for (let index = 0; index < this.root[0].length; index += 2) {
+				if (index < this.root[0].length - 1 && index % 2 == 0)
+					temp.push(sha256(this.root[0][index] + this.root[0][index + 1]));
+				else temp.push(this.root[0][index]);
 			}
-			this.root.push(temp);
+
+			this.root.unshift(temp);
 		}
 	}
 
-	add(data) {
-		if (this.root.length == 0) {
-			console.log("Tree is empty. Create a tree first.");
-			return;
-		}
-		this.createTree([...this.root[0], ...data]);
-	}
-
+	// Checks if the transaction is valid or not
 	verify(transaction) {
-		let position = this.root[0].find(t => t.hash == transaction.hash);
-		// console.log(position);
+		let position = this.root.slice(-1)[0].findIndex(t => t.hash == transaction.hash);
+		console.log("Element found at: " + position);
 		if (position) {
-			let indexToVerify = position - 1;
 
-			let hash = sha256(transaction.toString());
+			let verifyHash = transaction.getHash();
 
-			let tempRoot = [...this.root];
-			tempRoot[0][indexToVerify] = transaction;
-			tempRoot[1][indexToVerify] = hash;
+			for (let index = this.root.length - 2; index > 0; index--) {
 
-			while (tempRoot.slice(-1)[0].length > 1) {
-				let temp = [];
-
-				for (
-					let index = 0;
-					index < tempRoot.slice(-1)[0].length;
-					index += 2
-				) {
-					if (
-						index < tempRoot.slice(-1)[0].length - 1 &&
-						index % 2 == 0
-					)
-						temp.push(
-							sha256(
-								tempRoot.slice(-1)[0][index] +
-									tempRoot.slice(-1)[0][index + 1]
-							)
-						);
-					else temp.push(tempRoot.slice(-1)[0][index]);
+				let neighbour = null;
+				if (position % 2 == 0) {
+					neighbour = this.root[index][position + 1];
+					position = Math.floor((position) / 2)
+					verifyHash = sha256(verifyHash + neighbour);
 				}
-				tempRoot.push(temp);
-			}
-			// console.log(
-			// 	util.inspect(tempRoot, false, null, true /* enable colors */)
-			// );
+				else {
+					neighbour = this.root[index][position - 1];
+					position = Math.floor((position - 1) / 2)
+					verifyHash = sha256(neighbour + verifyHash);
+				}
 
-			if (this.root.slice(-1)[0] !== tempRoot.slice(-1)[0])
-				console.log("Invalid");
-			else console.log("Valid");
-		} else console.log("Data Not Found");
+			}
+			console.log(verifyHash == this.root[0][0] ? "Valid" : "Not Valid");
+		}
+		else {
+			console.log("Data not found with the id");
+
+		}
 	}
 }
 

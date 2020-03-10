@@ -1,12 +1,11 @@
-const util = require("util");
 class PatriciaTrie {
 	constructor() {
 		this.root = {};
 	}
 
+	// Add transaction to the trie
 	add(transaction) {
 		let temporaryRoot = this.root;
-
 		let str = transaction.hash;
 
 		for (let i = 0; i < str.length; i++) {
@@ -18,16 +17,32 @@ class PatriciaTrie {
 		}
 		temporaryRoot["DATA"] = transaction;
 	}
+
+	// Get transaction from the trie for the passed trie
+	get(hash) {
+		let temporaryRoot = this.root;
+
+		for (let index = 0; index < hash.length; index++) {
+			if (temporaryRoot) temporaryRoot = temporaryRoot[hash[index]];
+			else return null;
+		}
+		if (temporaryRoot["DATA"]) return temporaryRoot["DATA"];
+		else return null;
+	}
+
+	// Remove the trnasaction with the hash if found
+	remove(hash) {
+		let temporaryRoot = this.root;
+
+		for (let index = 0; index < hash.length; index++) {
+			if (temporaryRoot) temporaryRoot = temporaryRoot[hash[index]];
+			else return false;
+		}
+		if (temporaryRoot["DATA"]) {
+			delete temporaryRoot["DATA"];
+			return true;
+		} else return false;
+	}
 }
 
-// const trie = new PatriciaTrie();
-// console.log(trie);
-// trie.add("cat");
-// console.log(trie);
-
-// console.log(util.inspect(trie, { showHidden: false, depth: null }));
-// trie.add("car");
-// console.log(util.inspect(trie, { showHidden: false, depth: null }));
-// console.log(trie.root["c"]["a"]["t"].DATA);
-
-module.exports = PatriciaTrie;
+module.exports = PatriciaTrie
